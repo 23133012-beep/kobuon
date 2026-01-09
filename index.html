@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Không buồn - Sync 3.05s</title>
+    <title>Không buồn - Lặp lại</title>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;500&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
             background-color: #0a0a0a;
             color: #fff;
@@ -16,7 +17,22 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            position: relative;
         }
+
+        /* ẢNH NỀN */
+        .bg-image {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('image_1.png'); /* Đảm bảo tên file là image_1.png hoặc đổi lại cho đúng */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: -1; 
+            filter: brightness(35%) grayscale(50%) blur(2px);
+            transform: scale(1.05);
+        }
+
         .rain {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -30,6 +46,7 @@
             animation: fall linear infinite;
         }
         @keyframes fall { to { transform: translateY(110vh); } }
+        
         .container {
             position: relative;
             z-index: 10;
@@ -41,7 +58,7 @@
             font-size: 1.8rem;
             line-height: 1.6;
             min-height: 100px;
-            transition: all 0.5s ease;
+            transition: all 0.6s ease;
             text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
             font-weight: 300;
             opacity: 0;
@@ -51,6 +68,7 @@
             opacity: 1;
             filter: blur(0px);
         }
+
         .overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -72,16 +90,20 @@
             border-radius: 4px;
         }
         #start-btn:hover { background: #fff; color: #000; }
+        
         .vignette {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, transparent 20%, black 100%);
+            background: radial-gradient(circle, transparent 30%, black 100%);
             z-index: 5;
             pointer-events: none;
+            opacity: 0.85;
         }
     </style>
 </head>
 <body>
+
+    <div class="bg-image"></div>
 
     <div class="overlay" id="overlay">
         <button id="start-btn">sdyy</button>
@@ -94,23 +116,18 @@
         <div id="lyrics">...</div>
     </div>
 
-    <audio id="myAudio" src="snaptik.vn_zBt4R.mp3"></audio>
+    <audio id="myAudio" src="snaptik.vn_zBt4R.mp3" loop></audio>
 
     <script>
-        /**
-         * Tính toán lại dựa trên mảng target_times: [3.05, 1.8, 2.24, 2.0, 3.79, 2.0, 2.59]
-         * Bắt đầu từ 3.05s
-         */
         const lyricsData = [
             { time: 3.15, text: "chẳng phút giây nào" },        
-            { time: 5.0, text: "anh hết yêu em" },           // 3.05 + 1.8
-            { time: 7.09, text: "mỗi lần ướt mi hoen" },       // 4.85 + 2.24
-            { time: 8.40, text: "là do anh nhớ em thêm" },     // 7.09 + 2.0
-            { time: 10.88, text: "tại sao lại nói yêu anh" },  // 8.40 + 2.48
-            { time: 12.88, text: "mà lại để mi anh" },        // 12.88 + 2.0
-            { time: 14.47, text: "ướt nhèm.." },               // 14.88 + 2.59
-            { time: 17.40, text: "thật ra anh biết từ đầu rồi babe" },  // (Ước lượng tiếp theo nhịp)
-                 
+            { time: 5.0, text: "anh hết yêu em" },       
+            { time: 7.09, text: "mỗi lần ướt mi hoen" },      
+            { time: 8.40, text: "là do anh nhớ em thêm" },    
+            { time: 10.88, text: "tại sao lại nói yêu anh" }, 
+            { time: 12.88, text: "mà lại để mi anh" },  
+            { time: 14.47, text: "ướt nhèm.." },               
+            { time: 17.40, text: "thật ra anh biết từ đầu rồi babe" }, 
             { time: 20.5, text: "rằng lời yêu đó chỉ là gió bay" },
             { time: 24.09, text: "giờ tim vỡ nát như này" },
             { time: 26.69, text: "do anh cố chấp nên vậy" }
@@ -136,14 +153,23 @@
         startBtn.addEventListener('click', () => {
             overlay.style.opacity = '0';
             setTimeout(() => overlay.style.display = 'none', 1000);
-            
-            audio.currentTime = 0; // Phát từ đầu (0s)
+            audio.currentTime = 0; 
             audio.play();
             createRain();
         });
 
         audio.addEventListener('timeupdate', () => {
             const currentTime = audio.currentTime;
+
+            // CHỈNH SỬA: Nếu nhạc vừa lặp lại (về gần 0), xóa nội dung lyrics cũ
+            if (currentTime < lyricsData[0].time) {
+                if (lyricsEl.innerText !== "...") {
+                    lyricsEl.classList.remove('active');
+                    setTimeout(() => { lyricsEl.innerText = "..."; }, 500);
+                }
+                return;
+            }
+
             const currentLine = lyricsData.find((line, index) => {
                 const nextLine = lyricsData[index + 1];
                 return currentTime >= line.time && (!nextLine || currentTime < nextLine.time);
